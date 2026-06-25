@@ -66,7 +66,7 @@ class Publish extends ResourceObject
 
 ### 3. Install the module
 
-`DeferModule` decorates an existing `TransferInterface` binding. Pass the module that provides your real responder to the `DeferModule` constructor; `rename()` moves that binding to the `'base'` qualifier automatically.
+`DeferModule` decorates an existing `TransferInterface` binding. Pass the module that provides your real responder to the `DeferModule` constructor; `rename()` moves that binding to the `'inner'` qualifier automatically.
 
 ```php
 use BEAR\Defer\Module\DeferModule;
@@ -83,7 +83,7 @@ protected function configure(): void
 
 - **`DeferInterceptor`** — an *After* interceptor bound to `#[Defer]`. Once the method has run (so the body is set), it resolves each `#[Link]` href against the body and enqueues a `Request` on `DeferInterface`. Collecting at execution time means `#[Defer]` on `#[Embed]`-ed child resources is captured too.
 - **`DeferTransfer`** — decorates `TransferInterface`: runs the base transfer ("how to send"), then calls `DeferInterface::flush()` ("flush after send").
-- **Binding** — `DeferModule` receives the responder module via its constructor. `rename(TransferInterface::class, 'base')` moves that module's `TransferInterface` binding to the `'base'` qualifier, then `DeferTransfer` is bound as the new `TransferInterface`. The resource never sees any of this.
+- **Binding** — `DeferModule` receives the responder module via its constructor. `rename(TransferInterface::class, 'inner')` moves that module's `TransferInterface` binding to the `'inner'` qualifier, then `DeferTransfer` is bound as the new `TransferInterface`. The resource never sees any of this.
 
 ## Execution strategy
 

@@ -13,13 +13,13 @@ use Ray\Di\Di\Named;
  * Transfer decorator that flushes deferred requests after the response is sent
  *
  * The base transfer ("how to send", environment specific) is injected with the
- * 'base' qualifier; this decorator adds "flush after send", which is the same
+ * 'inner' qualifier; this decorator adds "flush after send", which is the same
  * regardless of the runtime.
  */
 final readonly class DeferTransfer implements TransferInterface
 {
     public function __construct(
-        #[Named('base')]
+        #[Named('inner')]
         private TransferInterface $transfer,
         private DeferInterface $defer,
     ) {

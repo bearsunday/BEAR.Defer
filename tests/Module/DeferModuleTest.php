@@ -43,7 +43,7 @@ final class DeferModuleTest extends TestCase
         $this->assertSame(202, $ro->code);
         $this->assertSame([], $log->ids);
 
-        // rename() moved NullResponder to 'base'; DeferTransfer flushes after base transfer
+        // rename() moved NullResponder to 'inner'; DeferTransfer flushes after base transfer
         $transfer($ro, []);
 
         $this->assertSame(['123'], $log->ids);

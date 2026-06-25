@@ -28,7 +28,7 @@ final class DeferModule extends AbstractModule
             $this->matcher->annotatedWith(Defer::class),
             [DeferInterceptorInterface::class],
         );
-        $this->rename(TransferInterface::class, 'base');
+        $this->rename(TransferInterface::class, 'inner');
         $this->bind(TransferInterface::class)->to(DeferTransfer::class);
     }
 }
