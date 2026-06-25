@@ -10,7 +10,6 @@ use BEAR\Defer\DeferInterceptorInterface;
 use BEAR\Defer\DeferInterface;
 use BEAR\Defer\DeferTransfer;
 use BEAR\Defer\SyncDefer;
-use BEAR\Resource\NullResponder;
 use BEAR\Resource\TransferInterface;
 use Override;
 use Ray\Di\AbstractModule;
@@ -29,8 +28,7 @@ final class DeferModule extends AbstractModule
             $this->matcher->annotatedWith(Defer::class),
             [DeferInterceptorInterface::class],
         );
-        // base transfer: replaced by the application (e.g. HttpResponder); NullResponder by default
-        $this->bind(TransferInterface::class)->annotatedWith('base')->to(NullResponder::class);
+        $this->rename(TransferInterface::class, 'base');
         $this->bind(TransferInterface::class)->to(DeferTransfer::class);
     }
 }

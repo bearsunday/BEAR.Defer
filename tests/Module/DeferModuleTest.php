@@ -6,6 +6,7 @@ namespace BEAR\Defer\Module;
 
 use BEAR\Defer\DeferTransfer;
 use BEAR\Resource\Module\ResourceModule;
+use BEAR\Resource\NullResponder;
 use BEAR\Resource\ResourceInterface;
 use BEAR\Resource\TransferInterface;
 use FakeVendor\Sandbox\PublishLog;
@@ -22,7 +23,13 @@ final class DeferModuleTest extends TestCase
             protected function configure(): void
             {
                 $this->install(new ResourceModule('FakeVendor\\Sandbox'));
-                $this->install(new DeferModule());
+                $responder = new class extends AbstractModule {
+                    protected function configure(): void
+                    {
+                        $this->bind(TransferInterface::class)->to(NullResponder::class);
+                    }
+                };
+                $this->install(new DeferModule($responder));
                 $this->bind(PublishLog::class)->in(Scope::SINGLETON);
             }
         });
@@ -36,7 +43,7 @@ final class DeferModuleTest extends TestCase
         $this->assertSame(202, $ro->code);
         $this->assertSame([], $log->ids);
 
-        // base transfer (NullResponder) runs, then deferred requests are flushed
+        // rename() moved NullResponder to 'base'; DeferTransfer flushes after base transfer
         $transfer($ro, []);
 
         $this->assertSame(['123'], $log->ids);

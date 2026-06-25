@@ -9,11 +9,6 @@ A resource accepts a request, returns `202 Accepted` immediately, and the heavy 
 
 Design background: [bearsunday/BEAR.Resource#373](https://github.com/bearsunday/BEAR.Resource/issues/373).
 
-## Requirements
-
-- PHP 8.2+
-- bear/resource ^1.32
-
 ## Installation
 
 ```bash
@@ -71,16 +66,14 @@ class Publish extends ResourceObject
 
 ### 3. Install the module
 
-`DeferModule` decorates `TransferInterface`. Provide your real responder as the `'base'` transfer (it defaults to `NullResponder`).
+`DeferModule` decorates an existing `TransferInterface` binding. Pass the module that provides your real responder to the `DeferModule` constructor; `rename()` moves that binding to the `'base'` qualifier automatically.
 
 ```php
 use BEAR\Defer\Module\DeferModule;
-use BEAR\Resource\TransferInterface;
 
 protected function configure(): void
 {
-    $this->install(new DeferModule());
-    $this->bind(TransferInterface::class)->annotatedWith('base')->to(YourHttpResponder::class);
+    $this->install(new DeferModule(new YourHttpResponderModule()));
 }
 ```
 
@@ -90,34 +83,15 @@ protected function configure(): void
 
 - **`DeferInterceptor`** — an *After* interceptor bound to `#[Defer]`. Once the method has run (so the body is set), it resolves each `#[Link]` href against the body and enqueues a `Request` on `DeferInterface`. Collecting at execution time means `#[Defer]` on `#[Embed]`-ed child resources is captured too.
 - **`DeferTransfer`** — decorates `TransferInterface`: runs the base transfer ("how to send"), then calls `DeferInterface::flush()` ("flush after send").
-- **Binding** — the base transfer carries the `'base'` qualifier; the application swaps it for the real responder. The resource never sees any of this.
+- **Binding** — `DeferModule` receives the responder module via its constructor. `rename(TransferInterface::class, 'base')` moves that module's `TransferInterface` binding to the `'base'` qualifier, then `DeferTransfer` is bound as the new `TransferInterface`. The resource never sees any of this.
 
 ## Execution strategy
 
-The strategy is chosen by binding `DeferInterface`; the application code never changes.
+The bundled `SyncDefer` runs deferred requests sequentially, in-process, after the transfer. It keeps request-local state in a singleton cleared on every `flush()`, so it is correct on PHP-FPM / CLI as long as `flush()` runs for every request.
 
-| Implementation | Where | Concurrency | Package |
-|---|---|---|---|
-| `SyncDefer` (bundled) | same process, post-transfer | sequential | this package |
-| `AsyncDefer` | same process, post-transfer | Fiber concurrent | BEAR.Async adapter |
-| `QueueDefer` | separate process | worker-distributed | queue adapter |
-
-`SyncDefer` keeps the request-local queue in a singleton cleared on every `flush()`, so it is correct on PHP-FPM / CLI as long as `flush()` runs for every request. Concurrent and out-of-process strategies are provided as separate adapter packages.
-
-## Error handling
-
-| Exception | When |
-|---|---|
-| `InvalidDeferRelException` | `#[Defer]` is given an empty rel or an empty list |
-| `LinkRelNotFoundException` | a `#[Defer]` rel has no matching `#[Link]` |
-| `DeferFlushException` | one or more deferred requests threw during `flush()` |
-
-The first two are configuration errors raised at interceptor time — *before* the response is sent — so they surface as a normal error instead of a silently failed `202`. `DeferFlushException` is raised after transfer: `flush()` runs every queued request even if some throw, then aggregates the failures (`$e->errors`) so one failure never drops the rest.
+The strategy is chosen by binding `DeferInterface`; the application code (`#[Defer]`) never changes.
 
 ## Swoole / long-running workers
 
 `DeferInterface` is a singleton whose queue is cleared at the request boundary by `flush()`. This gives per-request flushing on PHP-FPM / CLI without relying on process isolation. On a strictly coroutine-concurrent runtime where a single worker interleaves requests, per-request isolation must be provided by the runtime adapter; the core package does not address coroutine isolation.
 
-## License
-
-MIT — see [LICENSE](LICENSE).
