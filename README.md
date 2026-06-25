@@ -61,10 +61,10 @@ So the resource only declares *what* to defer; *when* and *where* it runs is dec
 
 ## Execution strategy
 
-The bundled `SyncDefer` runs deferred requests sequentially, in-process, after the transfer. It is bound as a singleton and cleared on every `flush()`, so it is correct on PHP-FPM / CLI (one request per process).
+The bundled `SyncDefer` runs deferred requests sequentially, in-process, after the transfer. It keeps the request-local queue in a singleton that is cleared on every `flush()`, so it is correct on PHP-FPM / CLI as long as `flush()` runs for every request.
 
 Concurrent (`AsyncDefer`, Fiber / BEAR.Async) and out-of-process (`QueueDefer`) strategies are provided as separate adapter packages — the application code (`#[Defer]`) does not change, only the binding does.
 
 ## Swoole / long-running workers
 
-`DeferInterface` is request-scoped by being a singleton that `flush()` clears at the request boundary. On a strictly coroutine-concurrent runtime where a single worker interleaves requests, per-request isolation must be provided by the runtime adapter; the core package does not address coroutine isolation.
+`DeferInterface` is a singleton whose queue is cleared at the request boundary by `flush()`. This gives per-request flushing on PHP-FPM / CLI without relying on process isolation. On a strictly coroutine-concurrent runtime where a single worker interleaves requests, per-request isolation must be provided by the runtime adapter; the core package does not address coroutine isolation.

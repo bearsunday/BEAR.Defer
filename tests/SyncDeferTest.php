@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace BEAR\Defer;
 
+use BEAR\Defer\Exception\DeferFlushException;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class SyncDeferTest extends TestCase
 {
@@ -36,5 +38,31 @@ final class SyncDeferTest extends TestCase
         $defer->flush();
 
         $this->assertSame(1, $count);
+    }
+
+    public function testFlushRunsAllRequestsEvenWhenOneThrows(): void
+    {
+        $defer = new SyncDefer();
+        $ran = [];
+        $defer->add(static function () use (&$ran): void {
+            $ran[] = 'a';
+        });
+        $defer->add(static function (): void {
+            throw new RuntimeException('boom');
+        });
+        $defer->add(static function () use (&$ran): void {
+            $ran[] = 'c';
+        });
+
+        try {
+            $defer->flush();
+            $this->fail('Expected DeferFlushException');
+        } catch (DeferFlushException $e) {
+            $this->assertCount(1, $e->errors);
+            $this->assertSame('boom', $e->getPrevious()?->getMessage());
+            $this->assertStringContainsString('1 deferred', $e->getMessage());
+        }
+
+        $this->assertSame(['a', 'c'], $ran);
     }
 }
