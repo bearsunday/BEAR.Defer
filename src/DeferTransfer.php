@@ -16,7 +16,7 @@ use Ray\Di\Di\Named;
  * 'base' qualifier; this decorator adds "flush after send", which is the same
  * regardless of the runtime.
  */
-final readonly class DeferAwareTransfer implements TransferInterface
+final readonly class DeferTransfer implements TransferInterface
 {
     public function __construct(
         #[Named('base')]

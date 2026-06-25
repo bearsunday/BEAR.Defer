@@ -9,7 +9,7 @@ use BEAR\Resource\TransferInterface;
 use Override;
 use PHPUnit\Framework\TestCase;
 
-final class DeferAwareTransferTest extends TestCase
+final class DeferTransferTest extends TestCase
 {
     public function testFlushesAfterBaseTransfer(): void
     {
@@ -42,7 +42,7 @@ final class DeferAwareTransferTest extends TestCase
             }
         };
 
-        $decorator = new DeferAwareTransfer($transfer, $defer);
+        $decorator = new DeferTransfer($transfer, $defer);
         $decorator(new FakeResourceObject(), []);
 
         $this->assertSame(['transfer', 'flush'], $calls->calls);

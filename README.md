@@ -89,7 +89,7 @@ protected function configure(): void
 ## How it works
 
 - **`DeferInterceptor`** — an *After* interceptor bound to `#[Defer]`. Once the method has run (so the body is set), it resolves each `#[Link]` href against the body and enqueues a `Request` on `DeferInterface`. Collecting at execution time means `#[Defer]` on `#[Embed]`-ed child resources is captured too.
-- **`DeferAwareTransfer`** — decorates `TransferInterface`: runs the base transfer ("how to send"), then calls `DeferInterface::flush()` ("flush after send").
+- **`DeferTransfer`** — decorates `TransferInterface`: runs the base transfer ("how to send"), then calls `DeferInterface::flush()` ("flush after send").
 - **Binding** — the base transfer carries the `'base'` qualifier; the application swaps it for the real responder. The resource never sees any of this.
 
 ## Execution strategy

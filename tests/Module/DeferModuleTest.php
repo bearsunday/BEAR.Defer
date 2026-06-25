@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BEAR\Defer\Module;
 
-use BEAR\Defer\DeferAwareTransfer;
+use BEAR\Defer\DeferTransfer;
 use BEAR\Resource\Module\ResourceModule;
 use BEAR\Resource\ResourceInterface;
 use BEAR\Resource\TransferInterface;
@@ -29,7 +29,7 @@ final class DeferModuleTest extends TestCase
         $resource = $injector->getInstance(ResourceInterface::class);
         $transfer = $injector->getInstance(TransferInterface::class);
         $log = $injector->getInstance(PublishLog::class);
-        $this->assertInstanceOf(DeferAwareTransfer::class, $transfer);
+        $this->assertInstanceOf(DeferTransfer::class, $transfer);
 
         $ro = $resource->post('app://self/article', ['title' => 'Hi', 'body' => 'Body']);
 
