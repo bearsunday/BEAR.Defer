@@ -65,8 +65,8 @@
     <!-- <rule ref="rulesets/naming.xml/ShortClassName"/> -->
     <rule ref="rulesets/naming.xml/ShortVariable">
         <properties>
-            <!-- Allow common loop counters and short variables -->
-            <property name="exceptions" value="i,j,k,id,to,db,io" />
+            <!-- Allow common loop counters and short variables (ro = ResourceObject) -->
+            <property name="exceptions" value="i,j,k,id,to,db,io,ro" />
         </properties>
     </rule>
     <!-- <rule ref="rulesets/naming.xml/LongVariable"/> -->
