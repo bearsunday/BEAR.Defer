@@ -64,6 +64,41 @@ class Publish extends ResourceObject
 }
 ```
 
+### Conditional defer
+
+When the follow-up work is conditional, inject `DeferInterface` and `ResourceInterface` directly and call `$defer->add()` manually. This bypasses `#[Defer]` and gives full control over what gets enqueued.
+
+```php
+use BEAR\Defer\DeferInterface;
+use BEAR\Resource\Method;
+use BEAR\Resource\ResourceInterface;
+use BEAR\Resource\ResourceObject;
+
+class Article extends ResourceObject
+{
+    public function __construct(
+        private readonly ResourceInterface $resource,
+        private readonly DeferInterface $defer,
+    ) {
+    }
+
+    public function onPost(string $title, string $body, bool $publish = false): static
+    {
+        $id = $this->articles->save($title, $body);
+        $this->code = 202;
+        $this->body = ['id' => $id];
+
+        if ($publish) {
+            $request = $this->resource->newRequest(Method::POST, 'app://self/publish', ['id' => $id]);
+            // or: $request = $this->resource->post->uri('app://self/publish')->withQuery(['id' => $id]);
+            $this->defer->add($request);
+        }
+
+        return $this;
+    }
+}
+```
+
 ### 3. Install the module
 
 `DeferModule` decorates an existing `TransferInterface` binding. Pass the module that provides your real responder to the `DeferModule` constructor; `rename()` moves that binding to the `'inner'` qualifier automatically.
