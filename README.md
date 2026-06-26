@@ -70,7 +70,6 @@ When the follow-up work is conditional, inject `DeferInterface` and `ResourceInt
 
 ```php
 use BEAR\Defer\DeferInterface;
-use BEAR\Resource\Method;
 use BEAR\Resource\ResourceInterface;
 use BEAR\Resource\ResourceObject;
 
@@ -89,8 +88,7 @@ class Article extends ResourceObject
         $this->body = ['id' => $id];
 
         if ($publish) {
-            $request = $this->resource->newRequest(Method::POST, 'app://self/publish', ['id' => $id]);
-            // or: $request = $this->resource->post->uri('app://self/publish')->withQuery(['id' => $id]);
+            $request = $this->resource->post->uri('app://self/publish')->withQuery(['id' => $id]);
             $this->defer->add($request);
         }
 
