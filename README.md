@@ -126,23 +126,14 @@ The strategy is chosen by binding `DeferInterface`; the application code (`#[Def
 
 ## Releasing the client connection
 
-For the client to get its response *before* the deferred work runs, the connection has to be released after the transfer. `DeferTransfer` does this through `ConnectionCloserInterface`, bound by default to `SapiConnectionCloser`, which picks a strategy from the SAPI:
+So the client gets its response *before* the deferred work runs, `DeferTransfer` releases the connection between the transfer and the flush, through `ConnectionCloserInterface` (default: `SapiConnectionCloser`):
 
-| SAPI | Strategy | Early return |
-|------|----------|--------------|
-| PHP-FPM (`fpm-fcgi`) | `fastcgi_finish_request()` | yes — connection released |
-| LiteSpeed | `litespeed_finish_request()` | yes — connection released |
-| Apache `mod_php` and other web SAPIs | `flush()` | best-effort — no guaranteed release |
-| CLI / phpdbg / embed | none | n/a — no client connection |
+- **PHP-FPM** — `fastcgi_finish_request()`
+- **LiteSpeed** — `litespeed_finish_request()`
+- **Other web SAPIs** (e.g. Apache `mod_php`) — `flush()`, best-effort; no guaranteed early return
+- **CLI** — nothing to release
 
-On `mod_php` a guaranteed early return is not possible (the usual `Content-Length` + `Connection: close` trick is defeated by compression, keep-alive, and buffering), so the response is flushed but the connection may stay open until the deferred work finishes — the same limitation mainstream frameworks have. To get a true early return there, run under PHP-FPM or LiteSpeed.
-
-The closer is just a binding, so a runtime that needs a different mechanism (e.g. Swoole's `$response->end()`) can override it without touching application code:
-
-```php
-$this->install(new DeferModule(new YourHttpResponderModule()));
-$this->bind(ConnectionCloserInterface::class)->to(SwooleConnectionCloser::class);
-```
+A runtime with a different mechanism (e.g. Swoole's `$response->end()`) binds its own `ConnectionCloserInterface` to replace it.
 
 ## Swoole / long-running workers
 
