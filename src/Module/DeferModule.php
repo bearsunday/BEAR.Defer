@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace BEAR\Defer\Module;
 
 use BEAR\Defer\Attribute\Defer;
+use BEAR\Defer\ConnectionCloserInterface;
 use BEAR\Defer\DeferInterceptor;
 use BEAR\Defer\DeferInterceptorInterface;
 use BEAR\Defer\DeferInterface;
 use BEAR\Defer\DeferTransfer;
+use BEAR\Defer\SapiConnectionCloser;
 use BEAR\Defer\SyncDefer;
 use BEAR\Resource\TransferInterface;
 use Override;
@@ -22,6 +24,7 @@ final class DeferModule extends AbstractModule
     protected function configure(): void
     {
         $this->bind(DeferInterface::class)->to(SyncDefer::class)->in(Scope::SINGLETON);
+        $this->bind(ConnectionCloserInterface::class)->to(SapiConnectionCloser::class);
         $this->bind(DeferInterceptorInterface::class)->to(DeferInterceptor::class);
         $this->bindInterceptor(
             $this->matcher->any(),
