@@ -115,7 +115,7 @@ protected function configure(): void
 ## How it works
 
 - **`DeferInterceptor`** — an *After* interceptor bound to `#[Defer]`. Once the method has run (so the body is set), it resolves each `#[Link]` href against the body and enqueues a `Request` on `DeferInterface`. Collecting at execution time means `#[Defer]` on `#[Embed]`-ed child resources is captured too.
-- **`DeferTransfer`** — decorates `TransferInterface`: runs the base transfer ("how to send"), then calls `DeferInterface::flush()` ("flush after send").
+- **`DeferTransfer`** — decorates `TransferInterface`: runs the base transfer ("how to send"), releases the client connection via `ConnectionCloserInterface` when the SAPI supports it, then calls `DeferInterface::flush()` ("flush after send").
 - **Binding** — `DeferModule` receives the responder module via its constructor. `rename(TransferInterface::class, 'inner')` moves that module's `TransferInterface` binding to the `'inner'` qualifier, then `DeferTransfer` is bound as the new `TransferInterface`. The resource never sees any of this.
 
 ## Execution strategy
@@ -123,6 +123,26 @@ protected function configure(): void
 The bundled `SyncDefer` runs deferred requests sequentially, in-process, after the transfer. It keeps request-local state in a singleton cleared on every `flush()`, so it is correct on PHP-FPM / CLI as long as `flush()` runs for every request.
 
 The strategy is chosen by binding `DeferInterface`; the application code (`#[Defer]`) never changes.
+
+## Releasing the client connection
+
+For the client to get its response *before* the deferred work runs, the connection has to be released after the transfer. `DeferTransfer` does this through `ConnectionCloserInterface`, bound by default to `SapiConnectionCloser`, which picks a strategy from the SAPI:
+
+| SAPI | Strategy | Early return |
+|------|----------|--------------|
+| PHP-FPM (`fpm-fcgi`) | `fastcgi_finish_request()` | yes — connection released |
+| LiteSpeed | `litespeed_finish_request()` | yes — connection released |
+| Apache `mod_php` and other web SAPIs | `flush()` | best-effort — no guaranteed release |
+| CLI / phpdbg / embed | none | n/a — no client connection |
+
+On `mod_php` a guaranteed early return is not possible (the usual `Content-Length` + `Connection: close` trick is defeated by compression, keep-alive, and buffering), so the response is flushed but the connection may stay open until the deferred work finishes — the same limitation mainstream frameworks have. To get a true early return there, run under PHP-FPM or LiteSpeed.
+
+The closer is just a binding, so a runtime that needs a different mechanism (e.g. Swoole's `$response->end()`) can override it without touching application code:
+
+```php
+$this->install(new DeferModule(new YourHttpResponderModule()));
+$this->bind(ConnectionCloserInterface::class)->to(SwooleConnectionCloser::class);
+```
 
 ## Swoole / long-running workers
 

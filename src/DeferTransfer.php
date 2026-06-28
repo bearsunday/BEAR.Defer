@@ -13,14 +13,16 @@ use Ray\Di\Di\Named;
  * Transfer decorator that flushes deferred requests after the response is sent
  *
  * The base transfer ("how to send", environment specific) is injected with the
- * 'inner' qualifier; this decorator adds "flush after send", which is the same
- * regardless of the runtime.
+ * 'inner' qualifier. This decorator runs it, releases the client connection when
+ * the SAPI allows it, then flushes the deferred requests — so the client is not
+ * kept waiting for the deferred work.
  */
 final readonly class DeferTransfer implements TransferInterface
 {
     public function __construct(
         #[Named('inner')]
         private TransferInterface $transfer,
+        private ConnectionCloserInterface $close,
         private DeferInterface $defer,
     ) {
     }
@@ -30,6 +32,7 @@ final readonly class DeferTransfer implements TransferInterface
     public function __invoke(ResourceObject $ro, array $server)
     {
         ($this->transfer)($ro, $server);
+        ($this->close)();
         $this->defer->flush();
     }
 }

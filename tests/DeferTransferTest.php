@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 
 final class DeferTransferTest extends TestCase
 {
-    public function testFlushesAfterBaseTransfer(): void
+    public function testReleasesConnectionThenFlushesAfterBaseTransfer(): void
     {
         $calls = new CallLog();
         $transfer = new class ($calls) implements TransferInterface {
@@ -42,9 +42,9 @@ final class DeferTransferTest extends TestCase
             }
         };
 
-        $decorator = new DeferTransfer($transfer, $defer);
+        $decorator = new DeferTransfer($transfer, new FakeConnectionCloser($calls), $defer);
         $decorator(new FakeResourceObject(), []);
 
-        $this->assertSame(['transfer', 'flush'], $calls->calls);
+        $this->assertSame(['transfer', 'close', 'flush'], $calls->calls);
     }
 }
