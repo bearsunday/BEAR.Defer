@@ -35,8 +35,6 @@ final readonly class DeferTransfer implements TransferInterface
         try {
             ($this->close)();
         } finally {
-            // Always drain the deferred queue, even if a custom closer throws,
-            // so requests are not dropped and the singleton queue is not left dirty.
             $this->defer->flush();
         }
     }
