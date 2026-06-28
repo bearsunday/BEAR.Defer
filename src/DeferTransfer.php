@@ -32,7 +32,12 @@ final readonly class DeferTransfer implements TransferInterface
     public function __invoke(ResourceObject $ro, array $server)
     {
         ($this->transfer)($ro, $server);
-        ($this->close)();
-        $this->defer->flush();
+        try {
+            ($this->close)();
+        } finally {
+            // Always drain the deferred queue, even if a custom closer throws,
+            // so requests are not dropped and the singleton queue is not left dirty.
+            $this->defer->flush();
+        }
     }
 }
