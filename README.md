@@ -15,11 +15,22 @@ Design background: [bearsunday/BEAR.Resource#373](https://github.com/bearsunday/
 composer require bear/defer
 ```
 
+Then install `DeferModule` in your `AppModule`, passing the module that provides your responder — `rename()` moves that binding to the `'inner'` qualifier automatically:
+
+```php
+use BEAR\Defer\Module\DeferModule;
+
+protected function configure(): void
+{
+    $this->install(new DeferModule(new YourHttpResponderModule()));
+}
+```
+
 ## Usage
 
-### 1. Declare what to defer
+### Declare what to defer
 
-Annotate the accepting resource with `#[Defer]`, listing `#[Link]` rels (no hardcoded URIs). Each rel's `href` is resolved against the resource body after the method runs.
+Annotate the accepting resource with `#[Defer]`, listing `#[Link]` rels (no hardcoded URIs). Each rel's `href` is resolved against the resource body after the method runs. Because `#[Defer]` references `#[Link]` rels, the deferred transition stays hypermedia-driven and surfaces in ALPS as a deferred transition.
 
 ```php
 use BEAR\Defer\Attribute\Defer;
@@ -47,7 +58,7 @@ class Article extends ResourceObject
 }
 ```
 
-### 2. The follow-up resources are ordinary resources
+### The follow-up resources are ordinary resources
 
 They don't know they are deferred — any resource can be the target.
 
@@ -96,21 +107,6 @@ class Article extends ResourceObject
     }
 }
 ```
-
-### 3. Install the module
-
-`DeferModule` decorates an existing `TransferInterface` binding. Pass the module that provides your real responder to the `DeferModule` constructor; `rename()` moves that binding to the `'inner'` qualifier automatically.
-
-```php
-use BEAR\Defer\Module\DeferModule;
-
-protected function configure(): void
-{
-    $this->install(new DeferModule(new YourHttpResponderModule()));
-}
-```
-
-`#[Defer]` references `#[Link]` rels, so the deferred transition stays hypermedia-driven and surfaces in ALPS as a deferred transition.
 
 ## How it works
 
